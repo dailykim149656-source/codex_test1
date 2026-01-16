@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
+import styles from "./page.module.css";
 
 type AnalysisResponse = {
   market_summary: string;
@@ -20,6 +21,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isGoogleAuthEnabled =
+    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   const onAnalyze = async () => {
     setError(null);
@@ -60,38 +63,37 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-indigo-50 text-slate-800">
-      <nav className="sticky top-0 z-50 border border-white/30 bg-white/70 px-6 py-4 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">📊</span>
-            <h1 className="text-xl font-bold text-slate-900">
-              StockAI Analyst (KR)
-            </h1>
+    <div className={styles.page}>
+      <nav className={styles.nav}>
+        <div className={styles.navInner}>
+          <div className={styles.brand}>
+            <span className={styles.brandIcon}>📊</span>
+            <h1 className={styles.brandTitle}>StockAI Analyst (KR)</h1>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <div className="hidden sm:block text-slate-500">
+          <div className={styles.navMeta}>
+            <div>
               상태:{" "}
-              <span className="font-semibold text-slate-700">
+              <strong>
                 {status === "loading" && "확인 중..."}
                 {status === "authenticated" && "로그인됨"}
                 {status === "unauthenticated" && "로그인 필요"}
-              </span>
+              </strong>
             </div>
-            <div className="text-slate-500">
+            <div>
               {status === "authenticated" ? session?.user?.email : "게스트"}
             </div>
             {status === "authenticated" ? (
               <button
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                className={styles.pillButton}
                 onClick={() => signOut()}
               >
                 로그아웃
               </button>
             ) : (
               <button
-                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                className={`${styles.pillButton} ${styles.primaryButton}`}
                 onClick={() => signIn("google")}
+                disabled={!isGoogleAuthEnabled}
               >
                 Google 로그인
               </button>
@@ -100,51 +102,57 @@ export default function HomePage() {
         </div>
       </nav>
 
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-12">
-        <section className="text-center">
-          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-            오늘의 미국 주식 시장 분석
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+      <main className={styles.main}>
+        <section className={styles.hero}>
+          <h2 className={styles.heroTitle}>오늘의 미국 주식 시장 분석</h2>
+          <p className={styles.heroSubtitle}>
             AI가 전하는 글로벌 증시 인사이트. 관심 키워드로 맞춤 분석을
             받아보세요.
           </p>
 
-          <div className="mx-auto mt-8 flex max-w-xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-lg sm:flex-row sm:items-center">
-            <input
-              className="flex-1 rounded-lg bg-transparent px-4 py-3 text-slate-700 outline-none transition focus:bg-slate-50"
-              type="text"
-              placeholder="키워드 입력 (예: Tesla, AI, 반도체)"
-              value={keywords}
-              onChange={(event) => setKeywords(event.target.value)}
-            />
-            <button
-              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg disabled:opacity-50"
-              onClick={onAnalyze}
-              disabled={loading || status !== "authenticated"}
-            >
-              {loading ? "분석 중..." : "분석하기"}
-              {loading && (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              )}
-            </button>
+          <div className={styles.searchCard}>
+            <div className={styles.searchRow}>
+              <input
+                className={styles.searchInput}
+                type="text"
+                placeholder="키워드 입력 (예: Tesla, AI, 반도체)"
+                value={keywords}
+                onChange={(event) => setKeywords(event.target.value)}
+              />
+              <button
+                className={styles.searchButton}
+                onClick={onAnalyze}
+                disabled={loading || status !== "authenticated"}
+              >
+                {loading ? "분석 중..." : "분석하기"}
+                {loading && <span className={styles.spinner} />}
+              </button>
+            </div>
+            <p className={styles.helperText}>
+              팁: 여러 키워드는 쉼표(,)로 구분하세요.
+            </p>
           </div>
-          <p className="mt-2 text-xs text-slate-400">
-            팁: 여러 키워드는 쉼표(,)로 구분하세요.
-          </p>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800">분석 설정</h3>
-            <p className="mt-1 text-sm text-slate-500">
+        {!isGoogleAuthEnabled && (
+          <section className={styles.warning}>
+            Google OAuth 설정이 아직 완료되지 않았습니다. Vercel 환경 변수에
+            `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`,
+            `NEXTAUTH_URL`을 등록한 뒤 다시 시도해주세요.
+          </section>
+        )}
+
+        <section className={`${styles.grid} ${styles.twoColumn}`}>
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>분석 설정</h3>
+            <p className={styles.cardDescription}>
               입력한 API Key는 요청 처리에만 사용되며 서버에 저장되지 않습니다.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm">
+            <div className={styles.settingsGrid}>
+              <label className={styles.field}>
                 사용 API 선택
                 <select
-                  className="rounded-md border border-slate-300 px-3 py-2"
+                  className={styles.select}
                   value={provider}
                   onChange={(event) =>
                     setProvider(event.target.value as "gemini" | "claude")
@@ -154,104 +162,76 @@ export default function HomePage() {
                   <option value="claude">Claude</option>
                 </select>
               </label>
-              <label className="grid gap-2 text-sm sm:col-span-2">
+              <label className={styles.field}>
                 API Key
                 <input
-                  className="rounded-md border border-slate-300 px-3 py-2"
+                  className={styles.input}
                   type="password"
                   placeholder="API Key를 입력하세요"
                   value={apiKey}
                   onChange={(event) => setApiKey(event.target.value)}
                 />
               </label>
+              {status !== "authenticated" && (
+                <p className={styles.mutedText}>
+                  분석을 실행하려면 Google 로그인이 필요합니다.
+                </p>
+              )}
             </div>
-            {status !== "authenticated" && (
-              <p className="mt-3 text-xs text-slate-500">
-                분석을 실행하려면 Google 로그인이 필요합니다.
-              </p>
-            )}
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800">최근 분석 기록</h3>
-            <ul className="mt-4 space-y-3 text-sm text-slate-500">
-              <li className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center">
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>최근 분석 기록</h3>
+            <ul className={styles.historyList}>
+              <li className={styles.emptyState}>
                 아직 표시할 기록이 없습니다.
               </li>
             </ul>
           </div>
         </section>
 
-        {error && (
-          <section className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </section>
-        )}
+        {error && <section className={styles.error}>{error}</section>}
 
         {result && (
-          <section className="grid gap-6 lg:grid-cols-[1.6fr_0.4fr]">
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                  <span className="rounded-md bg-blue-100 px-2 py-1 text-blue-600">
-                    📝
-                  </span>
-                  시장 요약
-                </h3>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                  {result.sentiment}
-                </span>
+          <section className={`${styles.grid} ${styles.resultGrid}`}>
+            <div className={styles.card}>
+              <div className={styles.resultHeader}>
+                <h3 className={styles.cardTitle}>📝 시장 요약</h3>
+                <span className={styles.badge}>{result.sentiment}</span>
               </div>
-              <p className="mt-4 text-sm leading-relaxed text-slate-600">
-                {result.market_summary}
-              </p>
-              <h4 className="mt-6 text-sm font-semibold text-slate-900">
-                주요 이벤트
-              </h4>
+              <p className={styles.summaryText}>{result.market_summary}</p>
+              <h4 className={styles.cardTitle}>주요 이벤트</h4>
               {result.key_events?.length ? (
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
+                <ul className={styles.eventsList}>
                   {result.key_events.map((event) => (
                     <li key={event}>{event}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-slate-400">
-                  주요 이벤트가 없습니다.
-                </p>
+                <p className={styles.mutedText}>주요 이벤트가 없습니다.</p>
               )}
-              <div className="mt-6 rounded-xl border border-amber-100 bg-amber-50 p-4">
-                <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-800">
-                  <span>💡</span> 투자 인사이트
-                </h4>
-                <p className="mt-2 text-sm text-amber-900/80">
-                  {result.investment_insight}
-                </p>
+              <div className={styles.insightBox}>
+                <strong>💡 투자 인사이트</strong>
+                <p>{result.investment_insight}</p>
               </div>
               {result.report_url && (
-                <div className="mt-6 flex justify-end">
-                  <a
-                    className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
-                    href={result.report_url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    전체 리포트 보기 <span>→</span>
-                  </a>
-                </div>
+                <a
+                  className={styles.reportLink}
+                  href={result.report_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  전체 리포트 보기 →
+                </a>
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-800">
-                인사이트 스냅샷
-              </h3>
-              <p className="mt-3 text-sm text-slate-500">
-                감정 지표:{" "}
-                <span className="font-semibold text-slate-700">
-                  {result.sentiment}
-                </span>
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>인사이트 스냅샷</h3>
+              <p className={styles.snapshotText}>
+                감정 지표: <strong>{result.sentiment}</strong>
               </p>
-              <p className="mt-2 text-xs text-slate-400">
+              <p className={styles.helperText}>
                 결과는 최신 기사 기준으로 자동 업데이트됩니다.
               </p>
             </div>
