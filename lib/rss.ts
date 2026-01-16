@@ -40,7 +40,7 @@ const parser = new XMLParser({
   attributeNamePrefix: "",
   ignoreDeclaration: true,
   ignorePiTags: true,
-  ignoreNameSpace: true,
+  removeNSPrefix: true,
   trimValues: true,
 });
 
