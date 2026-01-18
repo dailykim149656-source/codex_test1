@@ -104,14 +104,16 @@ export async function handleApi(request: Request, handler: Handler) {
         metadata: context.audit.metadata,
       });
     }
-    return withHeaders(
-      response,
-      {
-        "x-request-id": requestId,
-        ...corsHeaders,
-        ...rateHeaders,
-      }
-    );
+    const safeHeaders: Record<string, string> = {
+      "x-request-id": requestId,
+      ...Object.fromEntries(
+        Object.entries(corsHeaders ?? {}).filter(([_, v]) => v !== undefined)
+      ),
+      ...Object.fromEntries(
+        Object.entries(rateHeaders ?? {}).filter(([_, v]) => v !== undefined)
+      ),
+    };
+    return withHeaders(response, safeHeaders);
   } catch (error) {
     const appError = toAppError(error);
     if (context.audit && context.actor) {
@@ -151,14 +153,16 @@ export async function handleApi(request: Request, handler: Handler) {
     }
 
     const response = NextResponse.json(body, { status: appError.status });
-    return withHeaders(
-      response,
-      {
-        "x-request-id": requestId,
-        ...corsHeaders,
-        ...rateHeaders,
-      }
-    );
+    const safeHeaders: Record<string, string> = {
+      "x-request-id": requestId,
+      ...Object.fromEntries(
+        Object.entries(corsHeaders ?? {}).filter(([_, v]) => v !== undefined)
+      ),
+      ...Object.fromEntries(
+        Object.entries(rateHeaders ?? {}).filter(([_, v]) => v !== undefined)
+      ),
+    };
+    return withHeaders(response, safeHeaders);
   }
 }
 
