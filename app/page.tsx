@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getProviders, signIn, signOut, useSession } from "next-auth/react";
 import styles from "./page.module.css";
 
@@ -10,7 +10,22 @@ type AnalysisResponse = {
   investment_insight: string;
   sentiment: "Bullish" | "Bearish" | "Neutral" | string;
   report_url?: string | null;
-  error?: string;
+};
+
+type ApiError = {
+  code: string;
+  message: string;
+  requestId: string;
+  details?: Record<string, unknown>;
+};
+
+type HistoryItem = {
+  id: string;
+  createdAt: string;
+  keywords: string[];
+  provider: "gemini" | "claude";
+  sentiment: string;
+  market_summary: string;
 };
 
 export default function HomePage() {
@@ -21,6 +36,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [isGoogleAuthEnabled, setIsGoogleAuthEnabled] = useState(
     process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true"
   );
@@ -46,6 +64,56 @@ export default function HomePage() {
       active = false;
     };
   }, []);
+
+  const formatHistoryDate = (isoDate: string) => {
+    const parsed = new Date(isoDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return isoDate;
+    }
+    return parsed.toLocaleString("ko-KR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const historyTitle = (keywordsList: string[]) =>
+    keywordsList.length ? keywordsList.join(", ") : "전체 시장";
+
+  const fetchHistory = useCallback(async () => {
+    if (status !== "authenticated") {
+      setHistoryItems([]);
+      setHistoryLoading(false);
+      setHistoryError(null);
+      return;
+    }
+
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const response = await fetch("/api/history");
+      const data = (await response.json()) as
+        | { items?: HistoryItem[] }
+        | ApiError;
+      if (!response.ok) {
+        const errorMessage =
+          "message" in data && data.message
+            ? `${data.message} (요청 ID: ${data.requestId})`
+            : "분석 기록을 불러오지 못했습니다.";
+        throw new Error(errorMessage);
+      }
+      setHistoryItems(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      setHistoryError(
+        err instanceof Error ? err.message : "분석 기록을 불러오지 못했습니다."
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [status]);
+
+  useEffect(() => {
+    void fetchHistory();
+  }, [fetchHistory]);
 
   const onAnalyze = async () => {
     setError(null);
@@ -73,11 +141,16 @@ export default function HomePage() {
         }),
       });
 
-      const data = (await response.json()) as AnalysisResponse;
+      const data = (await response.json()) as AnalysisResponse | ApiError;
       if (!response.ok) {
-        throw new Error(data.error || "분석 요청에 실패했습니다.");
+        const errorMessage =
+          "message" in data && data.message
+            ? `${data.message} (요청 ID: ${data.requestId})`
+            : "분석 요청에 실패했습니다.";
+        throw new Error(errorMessage);
       }
-      setResult(data);
+      setResult(data as AnalysisResponse);
+      void fetchHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : "알 수 없는 오류입니다.");
     } finally {
@@ -206,10 +279,44 @@ export default function HomePage() {
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>최근 분석 기록</h3>
             <ul className={styles.historyList}>
-              <li className={styles.emptyState}>
-                아직 표시할 기록이 없습니다.
-              </li>
+              {historyLoading && (
+                <li className={styles.emptyState}>
+                  기록을 불러오는 중입니다.
+                </li>
+              )}
+              {!historyLoading && historyItems.length === 0 && (
+                <li className={styles.emptyState}>
+                  {status === "authenticated"
+                    ? "아직 표시할 기록이 없습니다."
+                    : "로그인 후 기록을 확인할 수 있습니다."}
+                </li>
+              )}
+              {!historyLoading &&
+                historyItems.map((item) => (
+                  <li key={item.id} className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span className={styles.historyTitle}>
+                        {historyTitle(item.keywords)}
+                      </span>
+                      <span className={styles.historyBadge}>
+                        {item.sentiment}
+                      </span>
+                    </div>
+                    <div className={styles.historyMeta}>
+                      <span>{formatHistoryDate(item.createdAt)}</span>
+                      <span>
+                        {item.provider === "gemini" ? "Gemini" : "Claude"}
+                      </span>
+                    </div>
+                    <p className={styles.historySummary}>
+                      {item.market_summary}
+                    </p>
+                  </li>
+                ))}
             </ul>
+            {historyError && (
+              <p className={styles.historyError}>{historyError}</p>
+            )}
           </div>
         </section>
 

@@ -6,6 +6,10 @@ const hasGoogleAuth = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 );
 
+const isSecureContext =
+  process.env.NEXTAUTH_URL?.startsWith("https://") ||
+  process.env.NODE_ENV === "production";
+
 export const authOptions: NextAuthOptions = {
   providers: hasGoogleAuth
     ? [
@@ -25,8 +29,33 @@ export const authOptions: NextAuthOptions = {
       ],
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 8,
+    updateAge: 60 * 30,
   },
   secret: process.env.NEXTAUTH_SECRET,
+  useSecureCookies: Boolean(isSecureContext),
+  cookies: {
+    sessionToken: {
+      name: isSecureContext
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: Boolean(isSecureContext),
+      },
+    },
+    csrfToken: {
+      name: isSecureContext ? "__Host-next-auth.csrf-token" : "next-auth.csrf-token",
+      options: {
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        secure: Boolean(isSecureContext),
+      },
+    },
+  },
   pages: {
     signIn: "/",
   },

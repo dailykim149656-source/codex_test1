@@ -171,6 +171,9 @@ function deduplicateArticles(articles: Article[]) {
 }
 
 async function fetchAndParseRSS(url: string): Promise<Article[]> {
+  if (!RSS_FEEDS.includes(url)) {
+    return [];
+  }
   const response = await fetch(url, {
     headers: {
       "User-Agent": "RSSInsightBot/1.0",

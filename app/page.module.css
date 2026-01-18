@@ -255,11 +255,60 @@
   color: #64748b;
 }
 
+.historyItem {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 14px 16px;
+  background: #f8fafc;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.historyTitle {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.historyBadge {
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  padding: 2px 10px;
+  font-weight: 600;
+}
+
+.historyMeta {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.historySummary {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
 .emptyState {
   border: 1px dashed #e2e8f0;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
+}
+
+.historyError {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #b91c1c;
 }
 
 .error {
