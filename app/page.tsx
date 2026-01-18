@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { getProviders, signIn, signOut, useSession } from "next-auth/react";
 import styles from "./page.module.css";
 
 type AnalysisResponse = {
@@ -21,8 +21,31 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const isGoogleAuthEnabled =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
+  const [isGoogleAuthEnabled, setIsGoogleAuthEnabled] = useState(
+    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true"
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    void getProviders()
+      .then((providers) => {
+        if (!active) {
+          return;
+        }
+        setIsGoogleAuthEnabled(Boolean(providers?.google));
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setIsGoogleAuthEnabled(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const onAnalyze = async () => {
     setError(null);
