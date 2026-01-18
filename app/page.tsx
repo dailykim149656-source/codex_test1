@@ -101,7 +101,9 @@ export default function HomePage() {
             : "분석 기록을 불러오지 못했습니다.";
         throw new Error(errorMessage);
       }
-      setHistoryItems(Array.isArray(data.items) ? data.items : []);
+      const items =
+        "items" in data && Array.isArray(data.items) ? data.items : [];
+      setHistoryItems(items);
     } catch (err) {
       setHistoryError(
         err instanceof Error ? err.message : "분석 기록을 불러오지 못했습니다."
