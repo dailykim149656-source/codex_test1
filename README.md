@@ -38,6 +38,17 @@ npm run dev
 
 > 분석용 API Key는 사용자가 화면에서 입력하며, 서버에 저장하지 않습니다.
 
+### 로컬 .env.local 설정
+
+`.env.local.example`를 `.env.local`로 복사한 뒤 값을 채웁니다. 환경 변수가 누락되면
+Google 로그인 버튼이 비활성화됩니다. `NEXTAUTH_SECRET`는 아래 명령으로 생성할 수 있습니다.
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+환경 변수를 변경했다면 `npm run dev`를 재시작합니다.
+
 ## Vercel 배포 가이드
 
 1. **Vercel에서 새 프로젝트 생성**
