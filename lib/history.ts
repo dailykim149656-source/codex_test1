@@ -8,7 +8,7 @@ export type AnalysisHistoryItem = {
   tenantId: string;
   createdAt: string;
   keywords: string[];
-  provider: "gemini" | "claude";
+  provider: "gemini" | "claude" | "solar-pro-2";
   sentiment: string;
   market_summary: string;
 };
@@ -52,7 +52,7 @@ export async function addHistoryEntry(input: {
   email: string;
   tenantId: string;
   keywords: string[];
-  provider: "gemini" | "claude";
+  provider: "gemini" | "claude" | "solar-pro-2";
   sentiment: string;
   market_summary: string;
 }) {

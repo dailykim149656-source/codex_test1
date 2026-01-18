@@ -9,11 +9,13 @@ type AnalysisResult = {
 
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-exp"];
 const CLAUDE_MODEL = "claude-3-5-sonnet-20240620";
+const SOLAR_PRO_2_MODEL = "solar-pro-2";
+const SOLAR_API_URL = "https://api.upstage.ai/v1/solar/chat/completions";
 
 export async function analyzeNews(
   articles: Article[],
   keywords: string[],
-  provider: "gemini" | "claude",
+  provider: "gemini" | "claude" | "solar-pro-2",
   apiKey: string
 ): Promise<AnalysisResult> {
   if (!articles.length) {
@@ -30,6 +32,11 @@ export async function analyzeNews(
 
   if (provider === "gemini") {
     const responseText = await callGeminiAPI(apiKey, prompt, GEMINI_MODELS[0], "v1beta");
+    return parseAIResponse(responseText);
+  }
+
+  if (provider === "solar-pro-2") {
+    const responseText = await callSolarAPI(apiKey, prompt, SOLAR_PRO_2_MODEL);
     return parseAIResponse(responseText);
   }
 
@@ -113,6 +120,32 @@ async function callClaudeAPI(apiKey: string, prompt: string, model: string) {
   }
 
   return json?.content?.[0]?.text ?? "";
+}
+
+async function callSolarAPI(apiKey: string, prompt: string, model: string) {
+  const payload = {
+    model,
+    max_tokens: 1500,
+    messages: [{ role: "user", content: prompt }],
+  };
+
+  const response = await fetch(SOLAR_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      json?.error?.message ?? json?.message ?? "Solar Pro 2 API request failed."
+    );
+  }
+
+  return json?.choices?.[0]?.message?.content ?? "";
 }
 
 function parseAIResponse(text: string): AnalysisResult {

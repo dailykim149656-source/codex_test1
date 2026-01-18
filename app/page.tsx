@@ -23,7 +23,7 @@ type HistoryItem = {
   id: string;
   createdAt: string;
   keywords: string[];
-  provider: "gemini" | "claude";
+  provider: "gemini" | "claude" | "solar-pro-2";
   sentiment: string;
   market_summary: string;
 };
@@ -32,7 +32,7 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const [keywords, setKeywords] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [provider, setProvider] = useState<"gemini" | "claude">("gemini");
+  const [provider, setProvider] = useState<"gemini" | "claude" | "solar-pro-2">("gemini");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +78,15 @@ export default function HomePage() {
 
   const historyTitle = (keywordsList: string[]) =>
     keywordsList.length ? keywordsList.join(", ") : "전체 시장";
+  const historyProviderLabel = (value: HistoryItem["provider"]) => {
+    if (value === "gemini") {
+      return "Gemini";
+    }
+    if (value === "claude") {
+      return "Claude";
+    }
+    return "Solar Pro 2";
+  };
 
   const fetchHistory = useCallback(async () => {
     if (status !== "authenticated") {
@@ -253,11 +262,14 @@ export default function HomePage() {
                   className={styles.select}
                   value={provider}
                   onChange={(event) =>
-                    setProvider(event.target.value as "gemini" | "claude")
+                    setProvider(
+                      event.target.value as "gemini" | "claude" | "solar-pro-2"
+                    )
                   }
                 >
                   <option value="gemini">Gemini</option>
                   <option value="claude">Claude</option>
+                  <option value="solar-pro-2">Solar Pro 2</option>
                 </select>
               </label>
               <label className={styles.field}>
@@ -306,9 +318,7 @@ export default function HomePage() {
                     </div>
                     <div className={styles.historyMeta}>
                       <span>{formatHistoryDate(item.createdAt)}</span>
-                      <span>
-                        {item.provider === "gemini" ? "Gemini" : "Claude"}
-                      </span>
+                      <span>{historyProviderLabel(item.provider)}</span>
                     </div>
                     <p className={styles.historySummary}>
                       {item.market_summary}

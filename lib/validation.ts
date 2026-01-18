@@ -2,7 +2,7 @@ import { AppError } from "./errors";
 
 export type AnalyzePayload = {
   keywords: string[];
-  provider: "gemini" | "claude";
+  provider: "gemini" | "claude" | "solar-pro-2";
   apiKey: string;
 };
 
@@ -49,7 +49,7 @@ export async function parseAnalyzeRequest(
     });
   }
 
-  if (provider !== "gemini" && provider !== "claude") {
+  if (provider !== "gemini" && provider !== "claude" && provider !== "solar-pro-2") {
     throw new AppError("VALIDATION_ERROR", "지원하지 않는 공급자입니다.", {
       status: 400,
       exposeDetails: true,
