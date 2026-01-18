@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { filterHeaders } from "./lib/headers";
 
 function normalizeOrigin(value: string) {
   try {
@@ -47,15 +48,15 @@ function buildCorsHeaders(origin: string | null) {
 export function middleware(request: NextRequest) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   const origin = request.headers.get("origin");
-  const corsHeaders = buildCorsHeaders(origin);
+  const corsHeaders = filterHeaders(buildCorsHeaders(origin));
 
   if (request.method === "OPTIONS") {
     return new NextResponse(null, {
       status: 204,
-      headers: {
+      headers: filterHeaders({
         "x-request-id": requestId,
         ...corsHeaders,
-      },
+      }),
     });
   }
 

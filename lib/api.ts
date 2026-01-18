@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AppError, toAppError, isSafeDetails } from "./errors";
 import { logError } from "./logger";
 import { getClientIp, getRequestId } from "./request";
+import { filterHeaders } from "./headers";
 import { buildCorsHeaders, enforceCsrfProtection, ensureJsonRequest } from "./security";
 import { checkRateLimit, rateLimitHeaders } from "./rate-limit";
 import { writeAuditLog } from "./audit-log";
@@ -104,15 +105,11 @@ export async function handleApi(request: Request, handler: Handler) {
         metadata: context.audit.metadata,
       });
     }
-    const safeHeaders: Record<string, string> = {
+    const safeHeaders = filterHeaders({
       "x-request-id": requestId,
-      ...Object.fromEntries(
-        Object.entries(corsHeaders ?? {}).filter(([_, v]) => v !== undefined)
-      ),
-      ...Object.fromEntries(
-        Object.entries(rateHeaders ?? {}).filter(([_, v]) => v !== undefined)
-      ),
-    };
+      ...corsHeaders,
+      ...rateHeaders,
+    });
     return withHeaders(response, safeHeaders);
   } catch (error) {
     const appError = toAppError(error);
@@ -153,15 +150,11 @@ export async function handleApi(request: Request, handler: Handler) {
     }
 
     const response = NextResponse.json(body, { status: appError.status });
-    const safeHeaders: Record<string, string> = {
+    const safeHeaders = filterHeaders({
       "x-request-id": requestId,
-      ...Object.fromEntries(
-        Object.entries(corsHeaders ?? {}).filter(([_, v]) => v !== undefined)
-      ),
-      ...Object.fromEntries(
-        Object.entries(rateHeaders ?? {}).filter(([_, v]) => v !== undefined)
-      ),
-    };
+      ...corsHeaders,
+      ...rateHeaders,
+    });
     return withHeaders(response, safeHeaders);
   }
 }
